@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Occasion = "wedding" | "graduation";
 type Feeling = "uplifting" | "nostalgic" | "tearjerker" | "peaceful" | "energetic";
 type Style = "acoustic" | "piano" | "folk" | "soul" | "producer";
+type RecordState = "idle" | "requesting" | "recording" | "recorded" | "error";
 
 interface IntakeData {
   occasion: Occasion | null;
@@ -17,6 +18,9 @@ interface IntakeData {
   feelingNote: string;
   style: Style | null;
   styleNote: string;
+  voiceBlob: Blob | null;
+  voiceDuration: number;
+  storyText: string;
 }
 
 const FEELINGS: { id: Feeling; label: string; hint: string }[] = [
@@ -36,6 +40,28 @@ const STYLES: { id: Style; label: string }[] = [
 ];
 
 const STEP_NAMES = ["Occasion", "Vibe", "Story", "Review", "Submit"];
+
+// ─── Voice recording helpers ──────────────────────────────────────────────────
+
+function getSupportedMimeType(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  const types = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+  ];
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
+function fmtTime(secs: number): string {
+  const m = Math.floor(secs / 60).toString().padStart(2, "0");
+  const s = (secs % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
@@ -334,6 +360,215 @@ function Step2({ data, set, onNext, onBack }: {
   );
 }
 
+// ─── Step 3 — Story (voice + text) ───────────────────────────────────────────
+
+function Step3({ data, set, onNext, onBack }: {
+  data: IntakeData;
+  set: (patch: Partial<IntakeData>) => void;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const [recState, setRecState] = useState<RecordState>(data.voiceBlob ? "recorded" : "idle");
+  const [elapsed, setElapsed] = useState(data.voiceDuration);
+  const [errMsg, setErrMsg] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(() =>
+    data.voiceBlob ? URL.createObjectURL(data.voiceBlob) : null
+  );
+
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const durationRef = useRef(data.voiceDuration);
+  const audioUrlRef = useRef(audioUrl);
+
+  const ok = !!data.voiceBlob || !!data.storyText.trim();
+
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const stopStream = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimer();
+      if (recorderRef.current) {
+        recorderRef.current.ondataavailable = null;
+        recorderRef.current.onstop = null;
+      }
+      stopStream();
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    };
+  }, []);
+
+  const startRecording = async () => {
+    setRecState("requesting");
+    setErrMsg("");
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setRecState("error");
+      setErrMsg("Microphone access was denied. Allow microphone access and try again.");
+      return;
+    }
+
+    streamRef.current = stream;
+    chunksRef.current = [];
+    durationRef.current = 0;
+
+    const mimeType = getSupportedMimeType();
+    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    recorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+      const dur = durationRef.current;
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+      const url = URL.createObjectURL(blob);
+      audioUrlRef.current = url;
+      setAudioUrl(url);
+      set({ voiceBlob: blob, voiceDuration: dur });
+      setElapsed(dur);
+      setRecState("recorded");
+      stopStream();
+    };
+
+    let secs = 0;
+    setElapsed(0);
+    timerRef.current = setInterval(() => {
+      secs += 1;
+      durationRef.current = secs;
+      setElapsed(secs);
+    }, 1000);
+
+    recorder.start(250);
+    setRecState("recording");
+  };
+
+  const stopRecording = () => {
+    clearTimer();
+    recorderRef.current?.stop();
+  };
+
+  const reRecord = () => {
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+    setAudioUrl(null);
+    set({ voiceBlob: null, voiceDuration: 0 });
+    durationRef.current = 0;
+    setElapsed(0);
+    setRecState("idle");
+  };
+
+  return (
+    <div className="fade-up" style={shell}>
+      <StepHeader
+        eyebrow="Step 3 of 5"
+        title="Tell us about them."
+        sub="Speak freely — memories, what makes them them, why this moment matters. There's no wrong answer."
+      />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        {/* Voice recorder */}
+        <div>
+          <label style={fieldLabel}>Voice note</label>
+
+          {recState === "idle" && (
+            <button
+              onClick={startRecording}
+              style={{ ...primaryBtn, width: "100%", padding: "16px", justifyContent: "center", display: "flex", alignItems: "center", gap: 8 }}
+            >
+              🎙 Start recording
+            </button>
+          )}
+
+          {recState === "requesting" && (
+            <div style={{ textAlign: "center", padding: "16px", color: "var(--ink-400)", fontSize: 14 }}>
+              Waiting for microphone permission…
+            </div>
+          )}
+
+          {recState === "recording" && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "20px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="rec-dot" />
+                <span style={{ fontSize: 28, fontWeight: 600, color: "var(--ink-50)", fontVariantNumeric: "tabular-nums" }}>
+                  {fmtTime(elapsed)}
+                </span>
+              </div>
+              <button
+                onClick={stopRecording}
+                style={{ ...ghostBtn, borderColor: "rgba(248,113,113,0.5)", color: "#f87171" }}
+              >
+                ■ Stop recording
+              </button>
+            </div>
+          )}
+
+          {recState === "recorded" && (
+            <div style={{ border: "1px solid var(--accent-400)", borderRadius: 14, padding: "14px 18px", background: "rgba(255,200,100,0.08)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: audioUrl ? 12 : 0 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-50)" }}>✓ Recording saved</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-400)", marginTop: 2 }}>{fmtTime(elapsed)}</div>
+                </div>
+                <button onClick={reRecord} style={{ ...ghostBtn, padding: "8px 14px", fontSize: 13 }}>
+                  Re-record
+                </button>
+              </div>
+              {audioUrl && (
+                <audio controls src={audioUrl} style={{ width: "100%", borderRadius: 8 }} />
+              )}
+            </div>
+          )}
+
+          {recState === "error" && (
+            <>
+              <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(220,50,50,0.1)", border: "1px solid rgba(220,50,50,0.3)", marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: "#f87171" }}>{errMsg}</span>
+              </div>
+              <button onClick={startRecording} style={{ ...ghostBtn, width: "100%" }}>
+                Try again
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Text fallback */}
+        <div>
+          <label style={fieldLabel}>
+            {data.voiceBlob ? "Anything to add? (optional)" : "Prefer to type instead?"}
+          </label>
+          <textarea
+            placeholder="A few sentences about them — what they mean to you, what makes this moment special…"
+            value={data.storyText}
+            onChange={(e) => set({ storyText: e.target.value })}
+            rows={5}
+            style={{ ...inputStyle, resize: "vertical" }}
+          />
+        </div>
+      </div>
+
+      <NavRow onBack={onBack} onNext={onNext} nextDisabled={!ok} />
+    </div>
+  );
+}
+
 // ─── Root form controller ─────────────────────────────────────────────────────
 
 const INITIAL_DATA: IntakeData = {
@@ -345,6 +580,9 @@ const INITIAL_DATA: IntakeData = {
   feelingNote: "",
   style: null,
   styleNote: "",
+  voiceBlob: null,
+  voiceDuration: 0,
+  storyText: "",
 };
 
 export default function IntakeForm() {
@@ -362,12 +600,13 @@ export default function IntakeForm() {
       {step === -1 && <IntakeIntro onStart={next} />}
       {step === 0 && <Step1 data={data} set={set} onNext={next} onBack={back} />}
       {step === 1 && <Step2 data={data} set={set} onNext={next} onBack={back} />}
+      {step === 2 && <Step3 data={data} set={set} onNext={next} onBack={back} />}
 
-      {/* Steps 3–5 coming in B004 and B005 */}
-      {step > 1 && (
+      {/* Steps 4–5 coming in B005 */}
+      {step > 2 && (
         <div style={{ ...shell, paddingTop: 80, textAlign: "center", color: "var(--ink-400)" }}>
-          <p>Steps 3–5 coming soon.</p>
-          <button onClick={() => setStep(1)} style={ghostBtn}>← Back</button>
+          <p>Steps 4–5 coming soon.</p>
+          <button onClick={() => setStep(2)} style={ghostBtn}>← Back</button>
         </div>
       )}
     </div>

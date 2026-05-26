@@ -38,3 +38,17 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-up { animation: fade-up 0.35s ease both; }
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f87171;
+  display: inline-block;
+  flex-shrink: 0;
+  animation: rec-pulse 1.2s ease infinite;
+}
