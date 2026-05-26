@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Life in Song — Mobile Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #1a0f0d; font-family: "Geist", ui-sans-serif, system-ui, sans-serif; color: #f3ece0; }
+    body {
+      display: flex; align-items: center; justify-content: center;
+      gap: 56px; padding: 40px 32px;
+      background:
+        radial-gradient(ellipse at 20% 0%, oklch(0.45 0.12 40 / 0.35), transparent 55%),
+        radial-gradient(ellipse at 80% 100%, oklch(0.35 0.08 25 / 0.4), transparent 55%),
+        #1a0f0d;
+      min-height: 100vh;
+    }
+    .side {
+      flex: 0 0 320px; max-width: 360px;
+    }
+    .eyebrow {
+      font-family: "Geist Mono", ui-monospace, monospace;
+      font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: oklch(0.72 0.025 55); margin: 0 0 14px;
+    }
+    h1 {
+      font-family: "Newsreader", Georgia, serif;
+      font-weight: 400; letter-spacing: -0.01em; line-height: 1.1;
+      font-size: 38px; margin: 0 0 18px;
+    }
+    h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, oklch(0.86 0.10 70), oklch(0.66 0.18 55));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    p { color: oklch(0.78 0.022 60); line-height: 1.55; font-size: 15px; margin: 0 0 14px; }
+    ul { list-style: none; padding: 0; margin: 22px 0 26px; }
+    li { padding: 12px 0; border-top: 1px solid rgba(255, 240, 220, 0.08); font-size: 14px; color: oklch(0.86 0.02 60); display: flex; gap: 12px; }
+    li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: oklch(0.74 0.16 60); margin-top: 8px; flex-shrink: 0; box-shadow: 0 0 10px oklch(0.74 0.16 60); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .actions button {
+      appearance: none; cursor: pointer;
+      padding: 9px 14px; border-radius: 999px;
+      background: rgba(255,240,220,0.06); color: oklch(0.92 0.02 60);
+      border: 1px solid rgba(255,240,220,0.14);
+      font: 500 12.5px/1 "Geist", system-ui;
+      letter-spacing: 0.02em;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .actions button:hover { background: rgba(255,240,220,0.10); }
+    .actions button.primary {
+      background: linear-gradient(180deg, oklch(0.80 0.13 65), oklch(0.66 0.18 55));
+      color: oklch(0.18 0.04 25);
+      border-color: transparent;
+    }
+    .actions button:active { transform: translateY(1px); }
+    .tip {
+      margin-top: 22px; padding: 14px 16px;
+      background: rgba(0,0,0,0.18); border: 1px solid rgba(255,240,220,0.08); border-radius: 12px;
+      font-size: 12.5px; color: oklch(0.7 0.02 50); line-height: 1.5;
+    }
+    .tip b { color: oklch(0.92 0.02 60); font-weight: 500; }
+
+    /* Phone frame */
+    .phone-wrap {
+      flex: 0 0 auto;
+      position: relative;
+      filter: drop-shadow(0 30px 50px rgba(0,0,0,0.5));
+    }
+    .phone {
+      width: 390px; height: 844px;
+      border-radius: 56px;
+      background: #0a0807;
+      padding: 10px;
+      box-shadow:
+        inset 0 0 0 2px rgba(255,240,220,0.06),
+        inset 0 0 0 6px #1a1310,
+        0 0 0 1px rgba(255,240,220,0.05);
+      position: relative;
+    }
+    .phone::before {
+      /* Dynamic island */
+      content: '';
+      position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+      width: 118px; height: 34px; border-radius: 20px;
+      background: #000;
+      z-index: 3;
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      border-radius: 46px;
+      overflow: hidden;
+      background: #0a0807;
+      position: relative;
+    }
+    .phone-screen iframe {
+      width: 100%; height: 100%;
+      border: 0;
+      display: block;
+    }
+    /* Status bar overlay */
+    .status {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 30px 0;
+      pointer-events: none;
+      z-index: 4;
+      font-family: "Geist", system-ui; font-weight: 600; font-size: 15px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .status .right { display: flex; align-items: center; gap: 5px; }
+    .status svg { display: block; }
+
+    @media (max-width: 880px) {
+      body { flex-direction: column; padding: 28px 18px 40px; gap: 28px; }
+      .side { flex: none; max-width: 100%; text-align: center; }
+      .side h1 { font-size: 30px; }
+      .side ul { text-align: left; max-width: 360px; margin: 18px auto 22px; }
+      .actions { justify-content: center; }
+      .phone { width: min(360px, calc(100vw - 36px)); height: calc(min(360px, calc(100vw - 36px)) * 2.165); border-radius: clamp(36px, 12vw, 56px); padding: 8px; }
+      .phone-screen { border-radius: clamp(28px, 10vw, 46px); }
+      .phone::before { width: 100px; height: 28px; top: 14px; }
+      .status { font-size: 14px; padding: 14px 24px 0; height: 46px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="side">
+    <div class="eyebrow">Mobile preview</div>
+    <h1>Life in Song, <em>at phone width.</em></h1>
+    <p>The whole prototype, rendered inside an iPhone-sized viewport so you can see the responsive layout at 390 × 844.</p>
+    <ul>
+      <li>Tap inside the phone to scroll, fill forms, record a story, approve the song.</li>
+      <li>Use the buttons below to jump straight to any flow.</li>
+      <li>The phone is a real iframe — interactions work just like the desktop version.</li>
+    </ul>
+    <div class="actions">
+      <button class="primary" data-route="landing">Landing</button>
+      <button data-route="intake">Intake</button>
+      <button data-route="dashboard">Consumer</button>
+      <button data-route="producer">Producer studio</button>
+      <button data-route="reload">↻ Reload</button>
+    </div>
+    <div class="tip">
+      <b>Tip:</b> open <code>Life in Song.html</code> directly to see the desktop layout, or just drag your preview pane wider/narrower to watch it reflow live.
+    </div>
+  </aside>
+
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="status">
+        <span>9:41</span>
+        <span class="right">
+          <!-- Signal -->
+          <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="0.5"/><rect x="5" y="5" width="3" height="6" rx="0.5"/><rect x="10" y="2" width="3" height="9" rx="0.5"/><rect x="15" y="0" width="3" height="11" rx="0.5" opacity="0.5"/></svg>
+          <!-- Wifi -->
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 11.5 6.5 9c.6-.5 1.3-.8 2-.8s1.4.3 2 .8l-2 2.5zM3.2 5.4l1.4 1.7c1.1-1 2.5-1.5 3.9-1.5s2.8.5 3.9 1.5l1.4-1.7C12.4 4 10.5 3.3 8.5 3.3S4.6 4 3.2 5.4zM.5 2.2l1.4 1.7c1.8-1.7 4.2-2.6 6.6-2.6s4.8.9 6.6 2.6l1.4-1.7C14.3.2 11.4-.8 8.5-.8S2.7.2.5 2.2z" transform="translate(0 1)"/></svg>
+          <!-- Battery -->
+          <svg width="27" height="12" viewBox="0 0 27 12" fill="none">
+            <rect x="0.5" y="0.5" width="22" height="11" rx="2.5" stroke="currentColor" opacity="0.5"/>
+            <rect x="2" y="2" width="19" height="8" rx="1.3" fill="currentColor"/>
+            <rect x="24" y="4" width="1.5" height="4" rx="0.6" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </span>
+      </div>
+      <div class="phone-screen">
+        <iframe id="frame" src="Life in Song.html" title="Life in Song mobile preview"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const frame = document.getElementById('frame');
+    document.querySelectorAll('[data-route]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const r = btn.dataset.route;
+        if (r === 'reload') { frame.src = frame.src; return; }
+        // Bounce the iframe to land on a fresh state, then post a route hint
+        // The app reads ?route= on load.
+        frame.src = 'Life in Song.html?route=' + r;
+      });
+    });
+  </script>
+</body>
+</html>
