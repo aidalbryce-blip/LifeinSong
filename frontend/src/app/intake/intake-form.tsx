@@ -21,6 +21,7 @@ interface IntakeData {
   voiceBlob: Blob | null;
   voiceDuration: number;
   storyText: string;
+  email: string;
 }
 
 const FEELINGS: { id: Feeling; label: string; hint: string }[] = [
@@ -61,6 +62,69 @@ function fmtTime(secs: number): string {
   const m = Math.floor(secs / 60).toString().padStart(2, "0");
   const s = (secs % 60).toString().padStart(2, "0");
   return `${m}:${s}`;
+}
+
+// Chrome reports `duration: Infinity` for <audio> elements playing a Blob
+// built from MediaRecorder chunks until playback passes through the real
+// end once. Seeking past the end forces the browser to compute it.
+function fixInfiniteDuration(audio: HTMLAudioElement) {
+  if (Number.isFinite(audio.duration)) return;
+  const onTimeUpdate = () => {
+    audio.currentTime = 0;
+    audio.removeEventListener("timeupdate", onTimeUpdate);
+  };
+  audio.addEventListener("timeupdate", onTimeUpdate);
+  audio.currentTime = Number.MAX_SAFE_INTEGER;
+}
+
+function fmtDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ─── Order brief (submission stub) ───────────────────────────────────────────
+// `POST /api/orders` is B006's responsibility — submitOrder is stubbed here so
+// the review → submit → confirmation flow can be exercised end to end.
+
+interface OrderBrief {
+  occasion: Occasion | null;
+  eventDate: string;
+  name: string;
+  relationship: string;
+  feeling: Feeling | null;
+  feelingNote: string;
+  style: Style | null;
+  styleNote: string;
+  voiceRecording: { blob: Blob; durationSeconds: number } | null;
+  storyText: string | null;
+  email: string;
+  submittedAt: string;
+}
+
+function buildBrief(data: IntakeData): OrderBrief {
+  return {
+    occasion: data.occasion,
+    eventDate: data.date,
+    name: data.name.trim(),
+    relationship: data.relationship.trim(),
+    feeling: data.feeling,
+    feelingNote: data.feelingNote.trim(),
+    style: data.style,
+    styleNote: data.styleNote.trim(),
+    voiceRecording: data.voiceBlob ? { blob: data.voiceBlob, durationSeconds: data.voiceDuration } : null,
+    storyText: data.storyText.trim() || null,
+    email: data.email.trim(),
+    submittedAt: new Date().toISOString(),
+  };
+}
+
+async function submitOrder(brief: OrderBrief): Promise<{ ok: true }> {
+  console.info("submitOrder (stub — POST /api/orders lands in B006):", brief);
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  return { ok: true };
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -371,16 +435,13 @@ function Step3({ data, set, onNext, onBack }: {
   const [recState, setRecState] = useState<RecordState>(data.voiceBlob ? "recorded" : "idle");
   const [elapsed, setElapsed] = useState(data.voiceDuration);
   const [errMsg, setErrMsg] = useState("");
-  const [audioUrl, setAudioUrl] = useState<string | null>(() =>
-    data.voiceBlob ? URL.createObjectURL(data.voiceBlob) : null
-  );
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const durationRef = useRef(data.voiceDuration);
-  const audioUrlRef = useRef(audioUrl);
 
   const ok = !!data.voiceBlob || !!data.storyText.trim();
 
@@ -396,6 +457,25 @@ function Step3({ data, set, onNext, onBack }: {
     streamRef.current = null;
   };
 
+  // Object URLs are an external-system resource (the browser's blob registry):
+  // each effect run must create its own and its own cleanup must revoke that
+  // same instance — not one read back from state/memo. That's what survives
+  // Strict Mode's mount→cleanup→mount dev cycle without ever rendering a
+  // revoked URL (a memo'd value + ref-revoke-on-unmount does not: the
+  // simulated remount reuses the memo'd URL, which the simulated unmount
+  // already revoked).
+  useEffect(() => {
+    if (!data.voiceBlob) {
+      // No resource to create — safe to reset directly.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAudioUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(data.voiceBlob);
+    setAudioUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [data.voiceBlob]);
+
   useEffect(() => {
     return () => {
       clearTimer();
@@ -404,7 +484,6 @@ function Step3({ data, set, onNext, onBack }: {
         recorderRef.current.onstop = null;
       }
       stopStream();
-      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
     };
   }, []);
 
@@ -436,10 +515,6 @@ function Step3({ data, set, onNext, onBack }: {
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
       const dur = durationRef.current;
-      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
-      const url = URL.createObjectURL(blob);
-      audioUrlRef.current = url;
-      setAudioUrl(url);
       set({ voiceBlob: blob, voiceDuration: dur });
       setElapsed(dur);
       setRecState("recorded");
@@ -464,11 +539,6 @@ function Step3({ data, set, onNext, onBack }: {
   };
 
   const reRecord = () => {
-    if (audioUrlRef.current) {
-      URL.revokeObjectURL(audioUrlRef.current);
-      audioUrlRef.current = null;
-    }
-    setAudioUrl(null);
     set({ voiceBlob: null, voiceDuration: 0 });
     durationRef.current = 0;
     setElapsed(0);
@@ -532,7 +602,12 @@ function Step3({ data, set, onNext, onBack }: {
                 </button>
               </div>
               {audioUrl && (
-                <audio controls src={audioUrl} style={{ width: "100%", borderRadius: 8 }} />
+                <audio
+                  controls
+                  src={audioUrl}
+                  style={{ width: "100%", borderRadius: 8 }}
+                  onLoadedMetadata={(e) => fixInfiniteDuration(e.currentTarget)}
+                />
               )}
             </div>
           )}
@@ -569,6 +644,170 @@ function Step3({ data, set, onNext, onBack }: {
   );
 }
 
+// ─── Review summary primitives ───────────────────────────────────────────────
+
+function ReviewSection({ title, onEdit, children }: {
+  title: string;
+  onEdit: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ border: "1px solid var(--glass-border)", borderRadius: 16, padding: "18px 20px", background: "var(--glass)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ ...fieldLabel, marginBottom: 0 }}>{title}</span>
+        <button onClick={onEdit} style={{ ...ghostBtn, padding: "6px 16px", fontSize: 13 }}>
+          Edit
+        </button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>{children}</div>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "7px 0" }}>
+      <span style={{ fontSize: 13, color: "var(--ink-400)", flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: 14, color: "var(--ink-50)", textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
+function SummaryBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ padding: "7px 0" }}>
+      <div style={{ fontSize: 13, color: "var(--ink-400)", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 14, color: "var(--ink-50)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{value}</div>
+    </div>
+  );
+}
+
+// ─── Step 4 — Review ──────────────────────────────────────────────────────────
+
+function Step4({ data, onEdit, onNext, onBack }: {
+  data: IntakeData;
+  onEdit: (step: number) => void;
+  onNext: () => void;
+  onBack: () => void;
+}) {
+  const occasionLabel = data.occasion
+    ? `${data.occasion === "wedding" ? "💍" : "🎓"} ${data.occasion.charAt(0).toUpperCase() + data.occasion.slice(1)}`
+    : "—";
+  const feeling = FEELINGS.find((f) => f.id === data.feeling);
+  const style = STYLES.find((s) => s.id === data.style);
+  const storyText = data.storyText.trim();
+
+  return (
+    <div className="fade-up" style={shell}>
+      <StepHeader
+        eyebrow="Step 4 of 5"
+        title="Let's make sure we've got it right."
+        sub="Here's everything you've shared. Edit any section before sending it off."
+      />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <ReviewSection title="The basics" onEdit={() => onEdit(0)}>
+          <SummaryRow label="Occasion" value={occasionLabel} />
+          <SummaryRow label="Event date" value={data.date ? fmtDate(data.date) : "—"} />
+          <SummaryRow label="Their name" value={data.name || "—"} />
+          <SummaryRow label="Your relationship" value={data.relationship || "—"} />
+        </ReviewSection>
+
+        <ReviewSection title="The vibe" onEdit={() => onEdit(1)}>
+          <SummaryRow label="Feeling" value={feeling?.label ?? "—"} />
+          <SummaryRow label="Musical style" value={style?.label ?? "—"} />
+          {data.feelingNote.trim() && <SummaryBlock label="Feeling notes" value={data.feelingNote.trim()} />}
+          {data.styleNote.trim() && <SummaryBlock label="Style notes" value={data.styleNote.trim()} />}
+        </ReviewSection>
+
+        <ReviewSection title="Their story" onEdit={() => onEdit(2)}>
+          <SummaryRow
+            label="Voice recording"
+            value={data.voiceBlob ? `🎙 ${fmtTime(data.voiceDuration)} recording` : "Not recorded"}
+          />
+          {storyText && <SummaryBlock label={data.voiceBlob ? "Additional notes" : "Story"} value={storyText} />}
+        </ReviewSection>
+      </div>
+
+      <NavRow onBack={onBack} onNext={onNext} />
+    </div>
+  );
+}
+
+// ─── Step 5 — Email + Submit ──────────────────────────────────────────────────
+
+function Step5({ data, set, onBack, onSubmitted }: {
+  data: IntakeData;
+  set: (patch: Partial<IntakeData>) => void;
+  onBack: () => void;
+  onSubmitted: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const emailOk = EMAIL_RE.test(data.email.trim());
+
+  const handleSubmit = async () => {
+    if (!emailOk || submitting) return;
+    setSubmitting(true);
+    await submitOrder(buildBrief(data));
+    onSubmitted();
+  };
+
+  return (
+    <div className="fade-up" style={shell}>
+      <StepHeader
+        eyebrow="Step 5 of 5"
+        title="Almost there."
+        sub="Leave your email and we'll take it from here — no payment needed yet."
+      />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        <div>
+          <label style={fieldLabel}>Your email</label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={data.email}
+            onChange={(e) => set({ email: e.target.value })}
+            style={inputStyle}
+          />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-400)" }}>
+          🔒 No charge until you approve — we&apos;ll send a payment link once your song is ready to hear.
+        </div>
+      </div>
+
+      <NavRow
+        onBack={onBack}
+        onNext={handleSubmit}
+        nextLabel={submitting ? "Submitting…" : "Submit"}
+        nextDisabled={!emailOk || submitting}
+      />
+    </div>
+  );
+}
+
+// ─── Confirmation ─────────────────────────────────────────────────────────────
+
+function Confirmation({ email }: { email: string }) {
+  return (
+    <div className="fade-up" style={{ ...shell, paddingTop: 80, textAlign: "center" }}>
+      <div style={{ fontSize: 40, marginBottom: 24 }}>✓</div>
+      <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 600, color: "var(--ink-50)", lineHeight: 1.15, margin: "0 0 16px" }}>
+        Got it. Your story is in good hands.
+      </h1>
+      <p style={{ fontSize: 16, color: "var(--ink-400)", lineHeight: 1.65, maxWidth: 460, margin: "0 auto 12px" }}>
+        We&apos;ll listen closely, match you with the right producer, and send a payment link to{" "}
+        <strong style={{ color: "var(--ink-200)" }}>{email}</strong> within 1–2 business days. Check your inbox
+        (and your spam folder, just in case).
+      </p>
+      <p style={{ fontSize: 13, color: "var(--ink-500)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 28 }}>
+        🔒 No charge until you approve.
+      </p>
+    </div>
+  );
+}
+
 // ─── Root form controller ─────────────────────────────────────────────────────
 
 const INITIAL_DATA: IntakeData = {
@@ -583,15 +822,47 @@ const INITIAL_DATA: IntakeData = {
   voiceBlob: null,
   voiceDuration: 0,
   storyText: "",
+  email: "",
 };
+
+const REVIEW_STEP = 3;
 
 export default function IntakeForm() {
   const [step, setStep] = useState<number>(-1); // -1 = intro
   const [data, setData] = useState<IntakeData>(INITIAL_DATA);
+  const [submitted, setSubmitted] = useState(false);
+  const [returnToReview, setReturnToReview] = useState(false);
 
   const set = (patch: Partial<IntakeData>) => setData((d) => ({ ...d, ...patch }));
-  const next = () => setStep((s) => s + 1);
-  const back = () => setStep((s) => (s <= 0 ? -1 : s - 1));
+
+  const next = () => {
+    if (returnToReview) {
+      setReturnToReview(false);
+      setStep(REVIEW_STEP);
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
+
+  const back = () => {
+    setReturnToReview(false);
+    setStep((s) => (s <= 0 ? -1 : s - 1));
+  };
+
+  // Jump from the review step to an earlier step to edit it; Continuing from
+  // there returns straight to the review rather than re-walking every step.
+  const editStep = (target: number) => {
+    setReturnToReview(true);
+    setStep(target);
+  };
+
+  if (submitted) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg-950)" }}>
+        <Confirmation email={data.email} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-950)" }}>
@@ -601,14 +872,8 @@ export default function IntakeForm() {
       {step === 0 && <Step1 data={data} set={set} onNext={next} onBack={back} />}
       {step === 1 && <Step2 data={data} set={set} onNext={next} onBack={back} />}
       {step === 2 && <Step3 data={data} set={set} onNext={next} onBack={back} />}
-
-      {/* Steps 4–5 coming in B005 */}
-      {step > 2 && (
-        <div style={{ ...shell, paddingTop: 80, textAlign: "center", color: "var(--ink-400)" }}>
-          <p>Steps 4–5 coming soon.</p>
-          <button onClick={() => setStep(2)} style={ghostBtn}>← Back</button>
-        </div>
-      )}
+      {step === REVIEW_STEP && <Step4 data={data} onEdit={editStep} onNext={next} onBack={back} />}
+      {step === 4 && <Step5 data={data} set={set} onBack={back} onSubmitted={() => setSubmitted(true)} />}
     </div>
   );
 }
