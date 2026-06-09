@@ -26,6 +26,7 @@ build/
 
 # Local voice-recording storage (never committed, never web-served)
 voice_storage/
+song_storage/
 
 # OS
 .DS_Store
