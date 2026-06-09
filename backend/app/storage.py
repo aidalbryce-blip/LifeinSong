@@ -17,6 +17,24 @@ def _extension_for(filename: str | None, content_type: str | None) -> str:
     return ""
 
 
+def save_song(
+    data: bytes,
+    base_dir: str,
+    filename: str | None = None,
+    content_type: str | None = None,
+) -> str:
+    """Write finished-song bytes under base_dir with a collision-resistant name.
+
+    Returns the relative filename stored as song_reference in the order document.
+    """
+    storage_dir = Path(base_dir)
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    extension = _extension_for(filename, content_type)
+    relative_name = f"{uuid.uuid4().hex}{extension}"
+    (storage_dir / relative_name).write_bytes(data)
+    return relative_name
+
+
 def save_voice_recording(
     data: bytes,
     base_dir: str,

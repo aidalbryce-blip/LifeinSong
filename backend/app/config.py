@@ -16,6 +16,9 @@ class Settings:
             for origin in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
             if origin.strip()
         ]
+        self.producer_password = os.environ.get("PRODUCER_PASSWORD", "")
+        self.secret_key = os.environ.get("SECRET_KEY", "")
+        self.song_storage_dir = os.environ.get("SONG_STORAGE_DIR", "./song_storage")
 
 
 @lru_cache

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -21,3 +23,18 @@ class OrderBriefIn(BaseModel):
     story_text: str | None = Field(alias="storyText", default=None)
     email: EmailStr
     submitted_at: str = Field(alias="submittedAt", default="")
+
+
+class ProducerLoginIn(BaseModel):
+    password: str
+
+
+class ProducerPatchIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Optional[str] = None
+    internal_notes: Optional[str] = None
+    song_reference: Optional[str] = None
+    chorus_lyrics: Optional[str] = None
+    full_lyrics: Optional[str] = None
+    producer_message: Optional[str] = None
