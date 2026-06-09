@@ -807,6 +807,14 @@ function Step5({ data, set, onBack, onSubmitted }: {
           🔒 No charge until you approve — we&apos;ll send a payment link once your song is ready to hear.
         </div>
 
+        <div style={{ fontSize: 12, color: "var(--ink-500)", lineHeight: 1.5 }}>
+          By submitting you agree to our{" "}
+          <a href="/privacy" style={{ color: "var(--ink-400)", textDecoration: "underline" }}>
+            Privacy Policy
+          </a>
+          . Voice recordings are deleted 90 days after your song is delivered.
+        </div>
+
         {submitError && (
           <div role="alert" style={{ fontSize: 13, color: "#f87171", padding: "10px 14px", background: "rgba(248,113,113,0.08)", borderRadius: 8 }}>
             {submitError}

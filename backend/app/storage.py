@@ -26,6 +26,8 @@ def save_voice_recording(
     """Write voice-recording bytes under base_dir with a collision-resistant name.
 
     Returns the relative filename stored as a reference in the order document.
+    Retention policy: delete 90 days after song delivery (or 90 days after
+    submission if unfulfilled). See PrecodeOS/SECURITY.md for full policy.
     """
     storage_dir = Path(base_dir)
     storage_dir.mkdir(parents=True, exist_ok=True)
