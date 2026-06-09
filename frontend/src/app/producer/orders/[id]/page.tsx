@@ -28,6 +28,7 @@ type Order = {
   chorus_lyrics?: string;
   full_lyrics?: string;
   producer_message?: string;
+  delivery_token?: string | null;
 };
 
 const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string }> = {
@@ -137,6 +138,7 @@ export default function OrderWorkPage() {
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [saving, setSaving] = useState(false);
   const [sendingReview, setSendingReview] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -229,11 +231,27 @@ export default function OrderWorkPage() {
       });
       if (res.status === 401) { handleUnauth(); return; }
       if (res.ok) {
-        setOrder(prev => (prev ? { ...prev, status: newStatus } : prev));
+        const data = await res.json();
+        setOrder(prev => prev ? {
+          ...prev,
+          status: newStatus,
+          ...(data.delivery_token ? { delivery_token: data.delivery_token } : {}),
+        } : prev);
       }
     } finally {
       setSendingReview(false);
     }
+  }
+
+  function deliveryUrl(token: string) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/consumer/${token}`;
+  }
+
+  async function copyDeliveryUrl(token: string) {
+    await navigator.clipboard.writeText(deliveryUrl(token));
+    setUrlCopied(true);
+    setTimeout(() => setUrlCopied(false), 2000);
   }
 
   const canSendForReview =
@@ -679,6 +697,59 @@ export default function OrderWorkPage() {
                   : 'Send for review →'}
             </button>
           </div>
+
+          {/* Delivery URL — shown once token exists */}
+          {order.delivery_token && (
+            <div
+              style={{
+                marginTop: 8,
+                padding: '16px 18px',
+                background: 'rgba(0,0,0,0.2)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 12,
+              }}
+            >
+              <div style={{ ...EYEBROW_STYLE, marginBottom: 10 }}>Customer delivery link</div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    color: 'var(--ink-300)',
+                    background: 'rgba(0,0,0,0.22)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {deliveryUrl(order.delivery_token)}
+                </div>
+                <button
+                  onClick={() => copyDeliveryUrl(order.delivery_token!)}
+                  style={{
+                    padding: '8px 16px',
+                    background: urlCopied ? 'rgba(80,220,120,0.15)' : 'rgba(255,255,255,0.07)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: 8,
+                    color: urlCopied ? 'oklch(0.82 0.15 150)' : 'var(--ink-200)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {urlCopied ? 'Copied!' : 'Copy link'}
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 8 }}>
+                Send this link to the customer. They can use it to preview and approve their song.
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -38,3 +38,9 @@ class ProducerPatchIn(BaseModel):
     chorus_lyrics: Optional[str] = None
     full_lyrics: Optional[str] = None
     producer_message: Optional[str] = None
+    download_unlocked: Optional[bool] = None
+
+
+class ConsumerPatchIn(BaseModel):
+    action: Literal["approve", "request_revision"]
+    revision_note: Optional[str] = None

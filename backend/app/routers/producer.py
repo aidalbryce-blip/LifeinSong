@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Cookie, Depends, File, HTTPException, UploadFile
@@ -108,10 +109,17 @@ async def patch_order(
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=422, detail="No fields provided")
+    if updates.get("status") == "awaiting_review":
+        existing = await collection.find_one({"order_id": order_id}, {"delivery_token": 1})
+        if existing is not None and not existing.get("delivery_token"):
+            updates["delivery_token"] = str(uuid.uuid4())
     result = await collection.update_one({"order_id": order_id}, {"$set": updates})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
-    return {"status": "updated"}
+    response: dict = {"status": "updated"}
+    if "delivery_token" in updates:
+        response["delivery_token"] = updates["delivery_token"]
+    return response
 
 
 @router.post("/orders/{order_id}/song")
