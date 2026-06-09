@@ -85,9 +85,7 @@ function fmtDate(dateStr: string): string {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// ─── Order brief (submission stub) ───────────────────────────────────────────
-// `POST /api/orders` is B006's responsibility — submitOrder is stubbed here so
-// the review → submit → confirmation flow can be exercised end to end.
+// ─── Order brief ─────────────────────────────────────────────────────────────
 
 interface OrderBrief {
   occasion: Occasion | null;
@@ -121,10 +119,36 @@ function buildBrief(data: IntakeData): OrderBrief {
   };
 }
 
-async function submitOrder(brief: OrderBrief): Promise<{ ok: true }> {
-  console.info("submitOrder (stub — POST /api/orders lands in B006):", brief);
-  await new Promise((resolve) => setTimeout(resolve, 700));
-  return { ok: true };
+async function submitOrder(brief: OrderBrief): Promise<{ order_id: string; status: string }> {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+  const form = new FormData();
+  form.append(
+    "brief",
+    JSON.stringify({
+      occasion: brief.occasion,
+      eventDate: brief.eventDate,
+      name: brief.name,
+      relationship: brief.relationship,
+      feeling: brief.feeling,
+      feelingNote: brief.feelingNote,
+      style: brief.style,
+      styleNote: brief.styleNote,
+      storyText: brief.storyText,
+      email: brief.email,
+      submittedAt: brief.submittedAt,
+    }),
+  );
+  if (brief.voiceRecording) {
+    form.append("voice", brief.voiceRecording.blob, "recording.webm");
+  }
+
+  const res = await fetch(`${apiBase}/api/orders`, { method: "POST", body: form });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Submission failed (${res.status})${text ? `: ${text}` : ""}`);
+  }
+  return res.json() as Promise<{ order_id: string; status: string }>;
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -743,13 +767,20 @@ function Step5({ data, set, onBack, onSubmitted }: {
   onSubmitted: () => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const emailOk = EMAIL_RE.test(data.email.trim());
 
   const handleSubmit = async () => {
     if (!emailOk || submitting) return;
     setSubmitting(true);
-    await submitOrder(buildBrief(data));
-    onSubmitted();
+    setSubmitError(null);
+    try {
+      await submitOrder(buildBrief(data));
+      onSubmitted();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -775,6 +806,12 @@ function Step5({ data, set, onBack, onSubmitted }: {
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink-400)" }}>
           🔒 No charge until you approve — we&apos;ll send a payment link once your song is ready to hear.
         </div>
+
+        {submitError && (
+          <div role="alert" style={{ fontSize: 13, color: "#f87171", padding: "10px 14px", background: "rgba(248,113,113,0.08)", borderRadius: 8 }}>
+            {submitError}
+          </div>
+        )}
       </div>
 
       <NavRow

@@ -24,6 +24,9 @@ build/
 .env.local
 .env.*.local
 
+# Local voice-recording storage (never committed, never web-served)
+voice_storage/
+
 # OS
 .DS_Store
 Thumbs.db
