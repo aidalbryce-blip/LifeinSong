@@ -29,6 +29,7 @@ type Order = {
   full_lyrics?: string;
   producer_message?: string;
   delivery_token?: string | null;
+  revision_note?: string | null;
 };
 
 const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string }> = {
@@ -46,6 +47,11 @@ const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string 
     label: 'Awaiting review',
     color: 'oklch(0.80 0.13 65)',
     bg: 'rgba(220,180,80,0.12)',
+  },
+  revision_requested: {
+    label: 'Revision requested',
+    color: 'oklch(0.75 0.18 25)',
+    bg: 'rgba(220,80,60,0.12)',
   },
 };
 
@@ -497,6 +503,41 @@ export default function OrderWorkPage() {
       {/* ── Upload & Deliver tab ── */}
       {tab === 'deliver' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Revision note callout */}
+          {order.status === 'revision_requested' && (
+            <div
+              style={{
+                padding: '16px 20px',
+                background: 'rgba(220,80,60,0.10)',
+                border: '1px solid rgba(220,80,60,0.35)',
+                borderRadius: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'oklch(0.75 0.18 25)',
+                  marginBottom: 8,
+                }}
+              >
+                Revision requested
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  color: 'var(--ink-100)',
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {order.revision_note || 'No note provided.'}
+              </p>
+            </div>
+          )}
+
           {/* File upload */}
           <div>
             <div style={EYEBROW_STYLE}>Final audio file</div>
@@ -694,7 +735,9 @@ export default function OrderWorkPage() {
                 ? 'Sent for review'
                 : sendingReview
                   ? 'Sending…'
-                  : 'Send for review →'}
+                  : order.status === 'revision_requested'
+                    ? 'Re-deliver →'
+                    : 'Send for review →'}
             </button>
           </div>
 
