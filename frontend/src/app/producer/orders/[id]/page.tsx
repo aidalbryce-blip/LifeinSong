@@ -30,6 +30,7 @@ type Order = {
   producer_message?: string;
   delivery_token?: string | null;
   revision_note?: string | null;
+  download_unlocked?: boolean;
 };
 
 const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string }> = {
@@ -52,6 +53,16 @@ const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string 
     label: 'Revision requested',
     color: 'oklch(0.75 0.18 25)',
     bg: 'rgba(220,80,60,0.12)',
+  },
+  approved: {
+    label: 'Approved',
+    color: 'oklch(0.82 0.15 150)',
+    bg: 'rgba(80,220,120,0.12)',
+  },
+  delivered: {
+    label: 'Delivered',
+    color: 'var(--ink-400)',
+    bg: 'rgba(255,255,255,0.06)',
   },
 };
 
@@ -176,7 +187,7 @@ export default function OrderWorkPage() {
     return () => { cancelled = true; };
   }, [orderId, handleUnauth]);
 
-  async function patchOrder(fields: Record<string, string>) {
+  async function patchOrder(fields: Record<string, string | boolean>) {
     setSaving(true);
     try {
       const res = await fetch(`${BACKEND}/api/producer/orders/${orderId}`, {
@@ -265,7 +276,7 @@ export default function OrderWorkPage() {
     chorusLyrics.trim().length > 0 &&
     fullLyrics.trim().length > 0;
 
-  const alreadySent = order?.status === 'awaiting_review';
+  const alreadySent = ['awaiting_review', 'approved', 'delivered'].includes(order?.status ?? '');
 
   if (loading) {
     return (
@@ -740,6 +751,50 @@ export default function OrderWorkPage() {
                     : 'Send for review →'}
             </button>
           </div>
+
+          {/* Download unlock — shown when customer has approved */}
+          {order.status === 'approved' && (
+            <div
+              style={{
+                padding: '16px 20px',
+                background: order.download_unlocked
+                  ? 'rgba(80,220,120,0.08)'
+                  : 'rgba(0,0,0,0.2)',
+                border: `1px solid ${order.download_unlocked ? 'rgba(80,220,120,0.3)' : 'var(--glass-border)'}`,
+                borderRadius: 12,
+              }}
+            >
+              <div style={{ ...EYEBROW_STYLE, marginBottom: 10 }}>Download unlock</div>
+              {order.download_unlocked ? (
+                <div style={{ color: 'oklch(0.82 0.15 150)', fontSize: 14 }}>
+                  Download unlocked — customer can download and see full lyrics.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ fontSize: 13, color: 'var(--ink-400)' }}>
+                    Customer has approved. Unlock after confirming payment.
+                  </div>
+                  <button
+                    onClick={() => patchOrder({ download_unlocked: true })}
+                    disabled={saving}
+                    style={{
+                      padding: '8px 18px',
+                      background: saving ? 'rgba(255,255,255,0.07)' : 'var(--accent-500)',
+                      color: saving ? 'var(--ink-500)' : 'var(--bg-950)',
+                      border: 'none',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {saving ? 'Saving…' : 'Unlock download'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Delivery URL — shown once token exists */}
           {order.delivery_token && (
