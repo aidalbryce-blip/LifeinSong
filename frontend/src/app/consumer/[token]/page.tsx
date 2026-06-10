@@ -252,24 +252,12 @@ export default function ConsumerDeliveryPage() {
               )}
 
               {order.download_unlocked && (
-                <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ marginTop: 16 }}>
                   <a
-                    href={`${BACKEND}/api/consumer/orders/${token}/song`}
-                    download="song.wav"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ padding: '9px 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)', borderRadius: 10, fontSize: 13, color: 'var(--ink-200)', textDecoration: 'none', cursor: 'pointer' }}
+                    href={`${BACKEND}/api/consumer/orders/${token}/song?download=1`}
+                    style={{ padding: '9px 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)', borderRadius: 10, fontSize: 13, color: 'var(--ink-200)', textDecoration: 'none', display: 'inline-block' }}
                   >
-                    Download WAV
-                  </a>
-                  <a
-                    href={`${BACKEND}/api/consumer/orders/${token}/song`}
-                    download="song.mp3"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ padding: '9px 20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)', borderRadius: 10, fontSize: 13, color: 'var(--ink-200)', textDecoration: 'none', cursor: 'pointer' }}
-                  >
-                    Download MP3
+                    Download Song
                   </a>
                 </div>
               )}

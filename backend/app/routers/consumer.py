@@ -79,6 +79,7 @@ async def patch_order(
 @router.get("/orders/{token}/song")
 async def stream_song(
     token: str,
+    download: bool = False,
     collection: AsyncIOMotorCollection = Depends(get_orders_collection),
 ) -> FileResponse:
     doc = await collection.find_one({"delivery_token": token})
@@ -105,4 +106,9 @@ async def stream_song(
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Song file not found on disk")
 
-    return FileResponse(file_path)
+    headers = {}
+    if download and download_unlocked:
+        suffix = Path(ref).suffix or ""
+        headers["Content-Disposition"] = f'attachment; filename="your-song{suffix}"'
+
+    return FileResponse(file_path, headers=headers)
