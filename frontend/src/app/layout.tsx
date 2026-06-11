@@ -46,6 +46,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <PaletteSwitcher />
+        <div className="ambient">
+          <div className="orb a" />
+          <div className="orb b" />
+          <div className="orb c" />
+        </div>
+        <div className="grain" />
         <Nav />
         {children}
       </body>

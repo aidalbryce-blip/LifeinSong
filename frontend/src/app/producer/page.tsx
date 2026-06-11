@@ -99,13 +99,7 @@ export default async function ProducerQueuePage() {
   const { awaitingReview, inProgress } = computeWeeklyStats(orders);
 
   return (
-    <div
-      style={{
-        maxWidth: 900,
-        margin: '0 auto',
-        padding: 'clamp(24px, 5vw, 48px) 24px',
-      }}
-    >
+    <div className="shell shell-wide">
       {/* Page header */}
       <div style={{ marginBottom: 32 }}>
         <div
@@ -138,15 +132,7 @@ export default async function ProducerQueuePage() {
           { label: 'Awaiting review this week', value: awaitingReview },
           { label: 'In progress this week', value: inProgress },
         ].map(s => (
-          <div
-            key={s.label}
-            style={{
-              padding: '16px 20px',
-              background: 'var(--glass)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: 14,
-            }}
-          >
+          <div key={s.label} className="glass" style={{ padding: '16px 20px' }}>
             <div style={{ fontSize: 30, fontWeight: 600, color: 'var(--ink-50)' }}>{s.value}</div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4 }}>{s.label}</div>
           </div>
@@ -161,14 +147,7 @@ export default async function ProducerQueuePage() {
       ) : orders.length === 0 ? (
         <div style={{ color: 'var(--ink-400)', fontSize: 14 }}>No orders yet.</div>
       ) : (
-        <div
-          style={{
-            background: 'var(--glass)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 16,
-            overflow: 'hidden',
-          }}
-        >
+        <div className="glass" style={{ overflow: 'hidden' }}>
           {/* Column headers */}
           <div
             style={{

@@ -191,67 +191,19 @@ function NavRow({ onBack, onNext, nextLabel = "Continue", nextDisabled }: {
 }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 36, paddingTop: 24, borderTop: "1px solid var(--glass-border)" }}>
-      <button onClick={onBack} style={ghostBtn}>← Back</button>
-      <button onClick={onNext} disabled={nextDisabled} style={nextDisabled ? { ...primaryBtn, opacity: 0.35, cursor: "not-allowed" } : primaryBtn}>
+      <button onClick={onBack} className="btn btn-ghost">← Back</button>
+      <button onClick={onNext} disabled={nextDisabled} className="btn btn-primary">
         {nextLabel} →
       </button>
     </div>
   );
 }
 
-const shell: React.CSSProperties = {
-  maxWidth: 560,
-  margin: "0 auto",
-  padding: "40px 20px 60px",
-  width: "100%",
-};
-
-const primaryBtn: React.CSSProperties = {
-  background: "var(--accent-500)",
-  color: "var(--ink-50)",
-  border: "none",
-  borderRadius: 12,
-  padding: "12px 24px",
-  fontSize: 15,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const ghostBtn: React.CSSProperties = {
-  background: "transparent",
-  color: "var(--ink-400)",
-  border: "1px solid var(--glass-border)",
-  borderRadius: 12,
-  padding: "12px 20px",
-  fontSize: 15,
-  cursor: "pointer",
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  background: "var(--glass)",
-  border: "1px solid var(--glass-border)",
-  borderRadius: 12,
-  padding: "12px 16px",
-  fontSize: 15,
-  color: "var(--ink-50)",
-  outline: "none",
-};
-
-const fieldLabel: React.CSSProperties = {
-  display: "block",
-  fontSize: 13,
-  fontWeight: 500,
-  color: "var(--ink-400)",
-  marginBottom: 8,
-  letterSpacing: "0.03em",
-};
-
 // ─── Intro ────────────────────────────────────────────────────────────────────
 
 function IntakeIntro({ onStart }: { onStart: () => void }) {
   return (
-    <div className="fade-up" style={{ ...shell, paddingTop: 80, textAlign: "center" }}>
+    <div className="fade-up shell" style={{ maxWidth: 560, paddingTop: 80, textAlign: "center" }}>
       <div style={{ fontSize: 40, marginBottom: 24 }}>♪</div>
       <h1 style={{ fontSize: "clamp(32px, 6vw, 52px)", fontWeight: 700, color: "var(--ink-50)", lineHeight: 1.05, margin: "0 0 20px" }}>
         Let&apos;s create <em style={{ color: "var(--accent-400)", fontStyle: "italic" }}>something special</em>.
@@ -259,7 +211,7 @@ function IntakeIntro({ onStart }: { onStart: () => void }) {
       <p style={{ fontSize: 17, color: "var(--ink-400)", lineHeight: 1.65, maxWidth: 480, margin: "0 auto 40px" }}>
         We&apos;ll ask you a few questions about your person and the moment you&apos;re celebrating. Take your time. Speak from the heart. We&apos;ll handle the rest.
       </p>
-      <button onClick={onStart} style={{ ...primaryBtn, fontSize: 17, padding: "14px 36px" }}>
+      <button onClick={onStart} className="btn btn-primary btn-lg">
         Begin →
       </button>
       <div style={{ marginTop: 20, fontSize: 13, color: "var(--ink-500)" }}>
@@ -280,7 +232,7 @@ function Step1({ data, set, onNext, onBack }: {
   const ok = !!data.occasion && !!data.date && !!data.name.trim() && !!data.relationship.trim();
 
   return (
-    <div className="fade-up" style={shell}>
+    <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 1 of 5"
         title="Who is this for?"
@@ -290,23 +242,13 @@ function Step1({ data, set, onNext, onBack }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Occasion */}
         <div>
-          <label style={fieldLabel}>Occasion</label>
+          <label className="field-label">Occasion</label>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {(["wedding", "graduation"] as Occasion[]).map((o) => (
               <button
                 key={o}
                 onClick={() => set({ occasion: o })}
-                style={{
-                  padding: "12px 22px",
-                  borderRadius: 14,
-                  border: `1px solid ${data.occasion === o ? "var(--accent-400)" : "var(--glass-border)"}`,
-                  background: data.occasion === o ? "rgba(255,200,100,0.12)" : "var(--glass)",
-                  color: data.occasion === o ? "var(--accent-400)" : "var(--ink-200)",
-                  fontSize: 15,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  textTransform: "capitalize",
-                }}
+                className={`chip${data.occasion === o ? " active" : ""}`}
               >
                 {o === "wedding" ? "💍" : "🎓"} {o.charAt(0).toUpperCase() + o.slice(1)}
               </button>
@@ -316,36 +258,37 @@ function Step1({ data, set, onNext, onBack }: {
 
         {/* Event date */}
         <div>
-          <label style={fieldLabel}>When is the event?</label>
+          <label className="field-label">When is the event?</label>
           <input
             type="date"
             value={data.date}
             onChange={(e) => set({ date: e.target.value })}
-            style={{ ...inputStyle, colorScheme: "dark" }}
+            className="input"
+            style={{ colorScheme: "dark" }}
           />
         </div>
 
         {/* Their name */}
         <div>
-          <label style={fieldLabel}>Their name</label>
+          <label className="field-label">Their name</label>
           <input
             type="text"
             placeholder="e.g. Maggie"
             value={data.name}
             onChange={(e) => set({ name: e.target.value })}
-            style={inputStyle}
+            className="input"
           />
         </div>
 
         {/* Relationship */}
         <div>
-          <label style={fieldLabel}>Your relationship to them</label>
+          <label className="field-label">Your relationship to them</label>
           <input
             type="text"
             placeholder="e.g. Father of the bride"
             value={data.relationship}
             onChange={(e) => set({ relationship: e.target.value })}
-            style={inputStyle}
+            className="input"
           />
         </div>
       </div>
@@ -366,7 +309,7 @@ function Step2({ data, set, onNext, onBack }: {
   const ok = !!data.feeling && !!data.style;
 
   return (
-    <div className="fade-up" style={shell}>
+    <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 2 of 5"
         title="What should it feel like?"
@@ -376,24 +319,14 @@ function Step2({ data, set, onNext, onBack }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
         {/* Feeling */}
         <div>
-          <label style={fieldLabel}>Feeling</label>
+          <label className="field-label">Feeling</label>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {FEELINGS.map((f) => (
               <button
                 key={f.id}
                 onClick={() => set({ feeling: f.id })}
-                style={{
-                  padding: "14px 18px",
-                  borderRadius: 14,
-                  border: `1px solid ${data.feeling === f.id ? "var(--accent-400)" : "var(--glass-border)"}`,
-                  background: data.feeling === f.id ? "rgba(255,200,100,0.10)" : "var(--glass)",
-                  color: data.feeling === f.id ? "var(--ink-50)" : "var(--ink-200)",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                }}
+                className={`chip${data.feeling === f.id ? " active" : ""}`}
+                style={{ borderRadius: "var(--radius-sm)", flexDirection: "column", gap: 3, width: "100%", textAlign: "left" }}
               >
                 <span style={{ fontWeight: 500, fontSize: 15 }}>{f.label}</span>
                 <span style={{ fontSize: 12, opacity: 0.65 }}>{f.hint}</span>
@@ -405,29 +338,20 @@ function Step2({ data, set, onNext, onBack }: {
             placeholder="Add more detail or an example (optional)"
             value={data.feelingNote}
             onChange={(e) => set({ feelingNote: e.target.value })}
-            style={{ ...inputStyle, marginTop: 12 }}
+            className="input"
+            style={{ marginTop: 12 }}
           />
         </div>
 
         {/* Style */}
         <div>
-          <label style={fieldLabel}>Musical style</label>
+          <label className="field-label">Musical style</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {STYLES.map((s) => (
               <button
                 key={s.id}
                 onClick={() => set({ style: s.id })}
-                style={{
-                  padding: "10px 18px",
-                  borderRadius: 12,
-                  border: `1px solid ${data.style === s.id ? "var(--accent-400)" : "var(--glass-border)"}`,
-                  background: data.style === s.id ? "rgba(255,200,100,0.10)" : "var(--glass)",
-                  color: data.style === s.id ? "var(--accent-400)" : "var(--ink-200)",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
+                className={`chip${data.style === s.id ? " active" : ""}`}
               >
                 {s.label}
               </button>
@@ -438,7 +362,8 @@ function Step2({ data, set, onNext, onBack }: {
             value={data.styleNote}
             onChange={(e) => set({ styleNote: e.target.value })}
             rows={3}
-            style={{ ...inputStyle, marginTop: 12, resize: "vertical" }}
+            className="textarea"
+            style={{ marginTop: 12 }}
           />
         </div>
       </div>
@@ -570,7 +495,7 @@ function Step3({ data, set, onNext, onBack }: {
   };
 
   return (
-    <div className="fade-up" style={shell}>
+    <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 3 of 5"
         title="Tell us about them."
@@ -580,12 +505,13 @@ function Step3({ data, set, onNext, onBack }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
         {/* Voice recorder */}
         <div>
-          <label style={fieldLabel}>Voice note</label>
+          <label className="field-label">Voice note</label>
 
           {recState === "idle" && (
             <button
               onClick={startRecording}
-              style={{ ...primaryBtn, width: "100%", padding: "16px", justifyContent: "center", display: "flex", alignItems: "center", gap: 8 }}
+              className="btn btn-primary"
+              style={{ width: "100%", padding: "16px" }}
             >
               🎙 Start recording
             </button>
@@ -607,7 +533,8 @@ function Step3({ data, set, onNext, onBack }: {
               </div>
               <button
                 onClick={stopRecording}
-                style={{ ...ghostBtn, borderColor: "rgba(248,113,113,0.5)", color: "#f87171" }}
+                className="btn btn-ghost"
+                style={{ borderColor: "rgba(248,113,113,0.5)", color: "#f87171" }}
               >
                 ■ Stop recording
               </button>
@@ -615,13 +542,13 @@ function Step3({ data, set, onNext, onBack }: {
           )}
 
           {recState === "recorded" && (
-            <div style={{ border: "1px solid var(--accent-400)", borderRadius: 14, padding: "14px 18px", background: "rgba(255,200,100,0.08)" }}>
+            <div style={{ border: "1px solid var(--accent-400)", borderRadius: "var(--radius-sm)", padding: "14px 18px", background: "rgba(255,200,100,0.08)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: audioUrl ? 12 : 0 }}>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--ink-50)" }}>✓ Recording saved</div>
                   <div style={{ fontSize: 12, color: "var(--ink-400)", marginTop: 2 }}>{fmtTime(elapsed)}</div>
                 </div>
-                <button onClick={reRecord} style={{ ...ghostBtn, padding: "8px 14px", fontSize: 13 }}>
+                <button onClick={reRecord} className="btn btn-ghost btn-sm">
                   Re-record
                 </button>
               </div>
@@ -629,7 +556,7 @@ function Step3({ data, set, onNext, onBack }: {
                 <audio
                   controls
                   src={audioUrl}
-                  style={{ width: "100%", borderRadius: 8 }}
+                  style={{ width: "100%", borderRadius: "var(--radius-sm)" }}
                   onLoadedMetadata={(e) => fixInfiniteDuration(e.currentTarget)}
                 />
               )}
@@ -638,10 +565,10 @@ function Step3({ data, set, onNext, onBack }: {
 
           {recState === "error" && (
             <>
-              <div style={{ padding: "12px 16px", borderRadius: 12, background: "rgba(220,50,50,0.1)", border: "1px solid rgba(220,50,50,0.3)", marginBottom: 10 }}>
+              <div style={{ padding: "12px 16px", borderRadius: "var(--radius-sm)", background: "rgba(220,50,50,0.1)", border: "1px solid rgba(220,50,50,0.3)", marginBottom: 10 }}>
                 <span style={{ fontSize: 13, color: "#f87171" }}>{errMsg}</span>
               </div>
-              <button onClick={startRecording} style={{ ...ghostBtn, width: "100%" }}>
+              <button onClick={startRecording} className="btn btn-ghost" style={{ width: "100%" }}>
                 Try again
               </button>
             </>
@@ -650,7 +577,7 @@ function Step3({ data, set, onNext, onBack }: {
 
         {/* Text fallback */}
         <div>
-          <label style={fieldLabel}>
+          <label className="field-label">
             {data.voiceBlob ? "Anything to add? (optional)" : "Prefer to type instead?"}
           </label>
           <textarea
@@ -658,7 +585,7 @@ function Step3({ data, set, onNext, onBack }: {
             value={data.storyText}
             onChange={(e) => set({ storyText: e.target.value })}
             rows={5}
-            style={{ ...inputStyle, resize: "vertical" }}
+            className="textarea"
           />
         </div>
       </div>
@@ -676,10 +603,10 @@ function ReviewSection({ title, onEdit, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ border: "1px solid var(--glass-border)", borderRadius: 16, padding: "18px 20px", background: "var(--glass)" }}>
+    <div className="glass" style={{ padding: "18px 20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ ...fieldLabel, marginBottom: 0 }}>{title}</span>
-        <button onClick={onEdit} style={{ ...ghostBtn, padding: "6px 16px", fontSize: 13 }}>
+        <span className="field-label">{title}</span>
+        <button onClick={onEdit} className="btn btn-ghost btn-sm">
           Edit
         </button>
       </div>
@@ -722,7 +649,7 @@ function Step4({ data, onEdit, onNext, onBack }: {
   const storyText = data.storyText.trim();
 
   return (
-    <div className="fade-up" style={shell}>
+    <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 4 of 5"
         title="Let's make sure we've got it right."
@@ -784,7 +711,7 @@ function Step5({ data, set, onBack, onSubmitted }: {
   };
 
   return (
-    <div className="fade-up" style={shell}>
+    <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 5 of 5"
         title="Almost there."
@@ -793,13 +720,13 @@ function Step5({ data, set, onBack, onSubmitted }: {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div>
-          <label style={fieldLabel}>Your email</label>
+          <label className="field-label">Your email</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={data.email}
             onChange={(e) => set({ email: e.target.value })}
-            style={inputStyle}
+            className="input"
           />
         </div>
 
@@ -816,7 +743,7 @@ function Step5({ data, set, onBack, onSubmitted }: {
         </div>
 
         {submitError && (
-          <div role="alert" style={{ fontSize: 13, color: "#f87171", padding: "10px 14px", background: "rgba(248,113,113,0.08)", borderRadius: 8 }}>
+          <div role="alert" style={{ fontSize: 13, color: "#f87171", padding: "10px 14px", background: "rgba(248,113,113,0.08)", borderRadius: "var(--radius-sm)" }}>
             {submitError}
           </div>
         )}
@@ -836,7 +763,7 @@ function Step5({ data, set, onBack, onSubmitted }: {
 
 function Confirmation({ email }: { email: string }) {
   return (
-    <div className="fade-up" style={{ ...shell, paddingTop: 80, textAlign: "center" }}>
+    <div className="fade-up shell" style={{ maxWidth: 560, paddingTop: 80, textAlign: "center" }}>
       <div style={{ fontSize: 40, marginBottom: 24 }}>✓</div>
       <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 600, color: "var(--ink-50)", lineHeight: 1.15, margin: "0 0 16px" }}>
         Got it. Your story is in good hands.
@@ -902,15 +829,11 @@ export default function IntakeForm() {
   };
 
   if (submitted) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--bg-950)" }}>
-        <Confirmation email={data.email} />
-      </div>
-    );
+    return <Confirmation email={data.email} />;
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-950)" }}>
+    <>
       {step >= 0 && <ProgressBar step={step} />}
 
       {step === -1 && <IntakeIntro onStart={next} />}
@@ -919,6 +842,6 @@ export default function IntakeForm() {
       {step === 2 && <Step3 data={data} set={set} onNext={next} onBack={back} />}
       {step === REVIEW_STEP && <Step4 data={data} onEdit={editStep} onNext={next} onBack={back} />}
       {step === 4 && <Step5 data={data} set={set} onBack={back} onSubmitted={() => setSubmitted(true)} />}
-    </div>
+    </>
   );
 }

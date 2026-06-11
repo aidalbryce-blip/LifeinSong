@@ -61,14 +61,6 @@ const HOW_STEPS = [
 export default function Home() {
   return (
     <>
-      {/* Ambient background */}
-      <div className="ambient">
-        <div className="orb a" />
-        <div className="orb b" />
-        <div className="orb c" />
-      </div>
-      <div className="grain" />
-
       {/* Page content */}
       <div className="shell shell-wide" style={{ paddingTop: 60 }}>
 
@@ -105,7 +97,7 @@ export default function Home() {
           </div>
 
           {/* Right: hero card — example delivered order */}
-          <div className="glass" style={{ padding: 'clamp(22px, 4vw, 30px)', borderRadius: 28, position: 'relative', overflow: 'hidden' }}>
+          <div className="glass" style={{ padding: 32, borderRadius: 'var(--radius-xl)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 80% 0%, oklch(0.65 0.16 60 / 0.18), transparent 55%)', pointerEvents: 'none' }} />
 
             <div className="between" style={{ marginBottom: 22 }}>
@@ -140,7 +132,7 @@ export default function Home() {
             </div>
 
             {/* Chorus preview */}
-            <div style={{ marginTop: 22, padding: 18, borderRadius: 14, background: 'rgba(0,0,0,0.18)', borderLeft: '2px solid var(--accent-500)' }}>
+            <div style={{ marginTop: 22, padding: 18, borderRadius: 'var(--radius-sm)', background: 'rgba(0,0,0,0.18)', borderLeft: '1px solid var(--accent-500)' }}>
               <div className="eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>Chorus</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontStyle: 'italic', color: 'var(--ink-50)', lineHeight: 1.5 }}>
                 &ldquo;And every Sunday in the garden,<br />
@@ -188,7 +180,7 @@ export default function Home() {
 
         {/* ── How it works ──────────────────────────────────────── */}
         <section style={{ padding: '40px 0 80px' }}>
-          <div className="glass glass-pad-lg" style={{ padding: '50px 48px', borderRadius: 28 }}>
+          <div className="glass" style={{ padding: 32, borderRadius: 'var(--radius-xl)' }}>
             <div className="how-grid">
               <div>
                 <div className="eyebrow" style={{ marginBottom: 16 }}>How it works</div>

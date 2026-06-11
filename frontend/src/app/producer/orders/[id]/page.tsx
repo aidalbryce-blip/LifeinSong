@@ -66,28 +66,6 @@ const STATUS_CONFIGS: Record<string, { label: string; color: string; bg: string 
   },
 };
 
-const FIELD_STYLE: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 16px',
-  background: 'rgba(0,0,0,0.22)',
-  border: '1px solid var(--glass-border)',
-  borderRadius: 12,
-  color: 'var(--ink-200)',
-  fontSize: 14,
-  lineHeight: 1.6,
-  resize: 'vertical' as const,
-  outline: 'none',
-  boxSizing: 'border-box',
-};
-
-const EYEBROW_STYLE: React.CSSProperties = {
-  fontSize: 11,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--ink-500)',
-  marginBottom: 8,
-};
-
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIGS[status] ?? {
     label: status,
@@ -126,11 +104,11 @@ function BriefField({
       style={{
         padding: '14px 18px',
         background: 'rgba(0,0,0,0.2)',
-        borderRadius: 12,
+        borderRadius: 'var(--radius-sm)',
         border: '1px solid var(--glass-border)',
       }}
     >
-      <div style={{ ...EYEBROW_STYLE, marginBottom: 6 }}>{label}</div>
+      <div className="eyebrow" style={{ marginBottom: 6 }}>{label}</div>
       <div style={{ color: 'var(--ink-50)', fontSize: 14, fontWeight: 500 }}>{value}</div>
       {sub && <div style={{ color: 'var(--ink-400)', fontSize: 13, marginTop: 4 }}>{sub}</div>}
     </div>
@@ -280,18 +258,17 @@ export default function OrderWorkPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: 48, color: 'var(--ink-400)', fontSize: 14 }}>Loading…</div>
+      <div className="shell" style={{ maxWidth: 860 }}>
+        <div style={{ padding: '48px 0', color: 'var(--ink-400)', fontSize: 14 }}>Loading…</div>
+      </div>
     );
   }
 
   if (notFound || !order) {
     return (
-      <div style={{ padding: 48 }}>
+      <div className="shell" style={{ maxWidth: 860 }}>
         <div style={{ color: '#f87171', fontSize: 14, marginBottom: 12 }}>Order not found.</div>
-        <Link
-          href="/producer"
-          style={{ color: 'var(--accent-400)', fontSize: 13, textDecoration: 'none' }}
-        >
+        <Link href="/producer" style={{ color: 'var(--accent-400)', fontSize: 13, textDecoration: 'none' }}>
           ← Back to queue
         </Link>
       </div>
@@ -299,23 +276,11 @@ export default function OrderWorkPage() {
   }
 
   return (
-    <div
-      style={{
-        maxWidth: 860,
-        margin: '0 auto',
-        padding: 'clamp(24px, 5vw, 40px) 24px',
-      }}
-    >
+    <div className="shell" style={{ maxWidth: 860 }}>
       {/* Back link */}
       <Link
         href="/producer"
-        style={{
-          color: 'var(--ink-400)',
-          fontSize: 13,
-          textDecoration: 'none',
-          display: 'inline-block',
-          marginBottom: 20,
-        }}
+        style={{ color: 'var(--ink-400)', fontSize: 13, textDecoration: 'none', display: 'inline-block', marginBottom: 20 }}
       >
         ← All orders
       </Link>
@@ -362,47 +327,20 @@ export default function OrderWorkPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <StatusBadge status={order.status} />
           {order.status === 'received' && (
-            <button
-              onClick={() => handleStatusChange('in_progress')}
-              style={{
-                padding: '6px 14px',
-                background: 'rgba(255,255,255,0.07)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: 8,
-                color: 'var(--ink-200)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
+            <button onClick={() => handleStatusChange('in_progress')} className="btn btn-ghost btn-sm">
               Mark in progress
             </button>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--glass-border)',
-          marginBottom: 28,
-        }}
-      >
+      {/* Pill tabs (FLAG 4) */}
+      <div className="tabs" style={{ marginBottom: 28 }}>
         {(['brief', 'deliver'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            style={{
-              padding: '10px 20px',
-              border: 'none',
-              background: 'transparent',
-              color: tab === t ? 'var(--ink-50)' : 'var(--ink-500)',
-              borderBottom: `2px solid ${tab === t ? 'var(--accent-400)' : 'transparent'}`,
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: tab === t ? 500 : 400,
-              marginBottom: -1,
-            }}
+            className={`tab${tab === t ? ' active' : ''}`}
           >
             {t === 'brief' ? 'Customer brief' : 'Upload & deliver'}
           </button>
@@ -416,7 +354,7 @@ export default function OrderWorkPage() {
           {order.voice_recording_reference && (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{ ...EYEBROW_STYLE, marginBottom: 0 }}>Voice memo</div>
+                <div className="eyebrow">Voice memo</div>
                 <span
                   style={{
                     fontSize: 11,
@@ -433,7 +371,7 @@ export default function OrderWorkPage() {
               <audio
                 controls
                 src={`${BACKEND}/api/producer/orders/${orderId}/voice`}
-                style={{ width: '100%', borderRadius: 8 }}
+                style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
               />
               <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 6 }}>
                 Duration shows 0:00 — this is normal for browser recordings. Press play to listen.
@@ -459,7 +397,7 @@ export default function OrderWorkPage() {
           {/* Story */}
           {order.story_text && (
             <div>
-              <div style={EYEBROW_STYLE}>Story</div>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Story</div>
               <p
                 style={{
                   margin: 0,
@@ -468,7 +406,7 @@ export default function OrderWorkPage() {
                   lineHeight: 1.7,
                   background: 'rgba(0,0,0,0.2)',
                   padding: '16px 20px',
-                  borderRadius: 12,
+                  borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--glass-border)',
                   whiteSpace: 'pre-wrap',
                 }}
@@ -480,18 +418,9 @@ export default function OrderWorkPage() {
 
           {/* Internal notes */}
           <div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ ...EYEBROW_STYLE, marginBottom: 0 }}>Internal notes</div>
-              <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>
-                Private · auto-saves on blur
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div className="eyebrow">Internal notes</div>
+              <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>Private · auto-saves on blur</span>
             </div>
             <textarea
               value={internalNotes}
@@ -499,13 +428,8 @@ export default function OrderWorkPage() {
               onBlur={() => { clearTimeout(saveTimers.current['notes']); patchOrder({ internal_notes: internalNotes }); }}
               placeholder="Scratchpad — only the studio sees this."
               rows={5}
-              style={{
-                ...FIELD_STYLE,
-                fontFamily: 'var(--font-mono)',
-                fontSize: 13,
-                lineHeight: 1.55,
-                minHeight: 100,
-              }}
+              className="textarea"
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 13, minHeight: 100 }}
             />
           </div>
         </div>
@@ -521,29 +445,13 @@ export default function OrderWorkPage() {
                 padding: '16px 20px',
                 background: 'rgba(220,80,60,0.10)',
                 border: '1px solid rgba(220,80,60,0.35)',
-                borderRadius: 12,
+                borderRadius: 'var(--radius)',
               }}
             >
-              <div
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'oklch(0.75 0.18 25)',
-                  marginBottom: 8,
-                }}
-              >
+              <div className="eyebrow" style={{ color: 'oklch(0.75 0.18 25)', marginBottom: 8 }}>
                 Revision requested
               </div>
-              <p
-                style={{
-                  margin: 0,
-                  color: 'var(--ink-100)',
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <p style={{ margin: 0, color: 'var(--ink-100)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
                 {order.revision_note || 'No note provided.'}
               </p>
             </div>
@@ -551,7 +459,7 @@ export default function OrderWorkPage() {
 
           {/* File upload */}
           <div>
-            <div style={EYEBROW_STYLE}>Final audio file</div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Final audio file</div>
 
             {order.song_reference ? (
               <div
@@ -559,7 +467,7 @@ export default function OrderWorkPage() {
                   padding: '14px 18px',
                   background: 'rgba(0,0,0,0.2)',
                   border: '1px solid var(--glass-border)',
-                  borderRadius: 12,
+                  borderRadius: 'var(--radius-sm)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -575,18 +483,7 @@ export default function OrderWorkPage() {
                     Song uploaded
                   </div>
                 </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    padding: '6px 14px',
-                    background: 'rgba(255,255,255,0.07)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 8,
-                    color: 'var(--ink-200)',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={() => fileInputRef.current?.click()} className="btn btn-ghost btn-sm">
                   Replace
                 </button>
               </div>
@@ -596,23 +493,9 @@ export default function OrderWorkPage() {
                 role="button"
                 tabIndex={0}
                 onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
-                style={{
-                  padding: '36px 24px',
-                  background: 'rgba(0,0,0,0.18)',
-                  border: '2px dashed var(--glass-border)',
-                  borderRadius: 14,
-                  textAlign: 'center',
-                  cursor: 'pointer',
-                }}
+                className="dropzone"
               >
-                <div
-                  style={{
-                    color: 'var(--ink-200)',
-                    fontSize: 16,
-                    fontWeight: 500,
-                    marginBottom: 6,
-                  }}
-                >
+                <div style={{ color: 'var(--ink-200)', fontSize: 16, fontWeight: 500, marginBottom: 6 }}>
                   Upload master file
                 </div>
                 <div style={{ color: 'var(--ink-500)', fontSize: 13 }}>
@@ -630,33 +513,20 @@ export default function OrderWorkPage() {
             />
 
             {uploadState === 'uploading' && (
-              <div style={{ color: 'var(--ink-400)', fontSize: 12, marginTop: 8 }}>
-                Uploading…
-              </div>
+              <div style={{ color: 'var(--ink-400)', fontSize: 12, marginTop: 8 }}>Uploading…</div>
             )}
             {uploadState === 'success' && (
-              <div style={{ color: 'oklch(0.82 0.15 150)', fontSize: 12, marginTop: 8 }}>
-                Upload successful.
-              </div>
+              <div style={{ color: 'oklch(0.82 0.15 150)', fontSize: 12, marginTop: 8 }}>Upload successful.</div>
             )}
             {uploadState === 'error' && (
-              <div style={{ color: '#f87171', fontSize: 12, marginTop: 8 }}>
-                Upload failed. Please try again.
-              </div>
+              <div style={{ color: '#f87171', fontSize: 12, marginTop: 8 }}>Upload failed. Please try again.</div>
             )}
           </div>
 
           {/* Chorus lyrics */}
           <div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ ...EYEBROW_STYLE, marginBottom: 0 }}>Chorus lyrics</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div className="eyebrow">Chorus lyrics</div>
               <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>Visible during preview</span>
             </div>
             <textarea
@@ -665,21 +535,15 @@ export default function OrderWorkPage() {
               onBlur={() => { clearTimeout(saveTimers.current['chorus']); patchOrder({ chorus_lyrics: chorusLyrics }); }}
               placeholder="Chorus lyrics visible to the customer during review…"
               rows={5}
-              style={{ ...FIELD_STYLE, fontStyle: 'italic', minHeight: 100 }}
+              className="textarea"
+              style={{ fontStyle: 'italic', minHeight: 100 }}
             />
           </div>
 
           {/* Full lyrics */}
           <div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ ...EYEBROW_STYLE, marginBottom: 0 }}>Full lyrics</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <div className="eyebrow">Full lyrics</div>
               <span style={{ fontSize: 11, color: 'var(--ink-500)' }}>Locked until payment</span>
             </div>
             <textarea
@@ -688,13 +552,14 @@ export default function OrderWorkPage() {
               onBlur={() => { clearTimeout(saveTimers.current['full']); patchOrder({ full_lyrics: fullLyrics }); }}
               placeholder={'[Verse 1]\n…\n\n[Chorus]\n…\n\n[Verse 2]\n…'}
               rows={10}
-              style={{ ...FIELD_STYLE, minHeight: 200 }}
+              className="textarea"
+              style={{ minHeight: 200 }}
             />
           </div>
 
           {/* Message to customer */}
           <div>
-            <div style={{ ...EYEBROW_STYLE, marginBottom: 4 }}>Message to customer</div>
+            <div className="eyebrow" style={{ marginBottom: 4 }}>Message to customer</div>
             <p style={{ fontSize: 12, color: 'var(--ink-500)', margin: '0 0 8px' }}>
               Explain your creative choices. Sent with the preview.
             </p>
@@ -704,7 +569,8 @@ export default function OrderWorkPage() {
               onBlur={() => { clearTimeout(saveTimers.current['msg']); patchOrder({ producer_message: producerMessage }); }}
               placeholder="Hi — a few notes on the creative choices…"
               rows={5}
-              style={{ ...FIELD_STYLE, minHeight: 100 }}
+              className="textarea"
+              style={{ minHeight: 100 }}
             />
           </div>
 
@@ -726,21 +592,7 @@ export default function OrderWorkPage() {
             <button
               onClick={() => !alreadySent && handleStatusChange('awaiting_review')}
               disabled={!canSendForReview || sendingReview || alreadySent}
-              style={{
-                padding: '10px 22px',
-                background:
-                  canSendForReview && !alreadySent
-                    ? 'var(--accent-500)'
-                    : 'rgba(255,255,255,0.07)',
-                color:
-                  canSendForReview && !alreadySent ? 'var(--bg-950)' : 'var(--ink-500)',
-                border: 'none',
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor:
-                  canSendForReview && !alreadySent ? 'pointer' : 'not-allowed',
-              }}
+              className={`btn ${canSendForReview && !alreadySent ? 'btn-primary' : 'btn-ghost'}`}
             >
               {alreadySent
                 ? 'Sent for review'
@@ -757,14 +609,12 @@ export default function OrderWorkPage() {
             <div
               style={{
                 padding: '16px 20px',
-                background: order.download_unlocked
-                  ? 'rgba(80,220,120,0.08)'
-                  : 'rgba(0,0,0,0.2)',
+                background: order.download_unlocked ? 'rgba(80,220,120,0.08)' : 'rgba(0,0,0,0.2)',
                 border: `1px solid ${order.download_unlocked ? 'rgba(80,220,120,0.3)' : 'var(--glass-border)'}`,
-                borderRadius: 12,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
-              <div style={{ ...EYEBROW_STYLE, marginBottom: 10 }}>Download unlock</div>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>Download unlock</div>
               {order.download_unlocked ? (
                 <div style={{ color: 'oklch(0.82 0.15 150)', fontSize: 14 }}>
                   Download unlocked — customer can download and see full lyrics.
@@ -777,17 +627,7 @@ export default function OrderWorkPage() {
                   <button
                     onClick={() => patchOrder({ download_unlocked: true })}
                     disabled={saving}
-                    style={{
-                      padding: '8px 18px',
-                      background: saving ? 'rgba(255,255,255,0.07)' : 'var(--accent-500)',
-                      color: saving ? 'var(--ink-500)' : 'var(--bg-950)',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: saving ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap',
-                    }}
+                    className="btn btn-primary btn-sm"
                   >
                     {saving ? 'Saving…' : 'Unlock download'}
                   </button>
@@ -804,10 +644,10 @@ export default function OrderWorkPage() {
                 padding: '16px 18px',
                 background: 'rgba(0,0,0,0.2)',
                 border: '1px solid var(--glass-border)',
-                borderRadius: 12,
+                borderRadius: 'var(--radius-sm)',
               }}
             >
-              <div style={{ ...EYEBROW_STYLE, marginBottom: 10 }}>Customer delivery link</div>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>Customer delivery link</div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div
                   style={{
@@ -818,7 +658,7 @@ export default function OrderWorkPage() {
                     color: 'var(--ink-300)',
                     background: 'rgba(0,0,0,0.22)',
                     border: '1px solid var(--glass-border)',
-                    borderRadius: 8,
+                    borderRadius: 'var(--radius-sm)',
                     padding: '8px 12px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -829,15 +669,10 @@ export default function OrderWorkPage() {
                 </div>
                 <button
                   onClick={() => copyDeliveryUrl(order.delivery_token!)}
+                  className="btn btn-ghost"
                   style={{
-                    padding: '8px 16px',
-                    background: urlCopied ? 'rgba(80,220,120,0.15)' : 'rgba(255,255,255,0.07)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 8,
-                    color: urlCopied ? 'oklch(0.82 0.15 150)' : 'var(--ink-200)',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
+                    color: urlCopied ? 'oklch(0.82 0.15 150)' : undefined,
+                    background: urlCopied ? 'rgba(80,220,120,0.15)' : undefined,
                   }}
                 >
                   {urlCopied ? 'Copied!' : 'Copy link'}
@@ -860,7 +695,7 @@ export default function OrderWorkPage() {
             right: 20,
             background: 'var(--glass)',
             border: '1px solid var(--glass-border)',
-            borderRadius: 8,
+            borderRadius: 'var(--radius-sm)',
             padding: '6px 14px',
             fontSize: 12,
             color: 'var(--ink-400)',
