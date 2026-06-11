@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
 function isPaperRoute(pathname: string): boolean {
-  return pathname === '/' || pathname === '/intake' || pathname.startsWith('/intake/');
+  return pathname === '/' || pathname === '/intake' || pathname.startsWith('/intake/') || pathname === '/my-song' || pathname === '/privacy';
 }
 
 export default function PaletteSwitcher() {

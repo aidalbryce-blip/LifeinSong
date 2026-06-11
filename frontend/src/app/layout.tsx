@@ -40,7 +40,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var p=window.location.pathname;if(p==='/'||p==='/intake'||p.startsWith('/intake/')){document.documentElement.setAttribute('data-mode','paper');}})();`,
+            __html: `(function(){var p=window.location.pathname;if(p==='/'||p==='/intake'||p.startsWith('/intake/')||p==='/my-song'||p==='/privacy'){document.documentElement.setAttribute('data-mode','paper');}})();`,
           }}
         />
       </head>
