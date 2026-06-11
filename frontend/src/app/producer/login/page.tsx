@@ -45,42 +45,17 @@ export default function ProducerLoginPage() {
         padding: 24,
       }}
     >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 360,
-          background: 'var(--glass)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: 20,
-          padding: 32,
-        }}
-      >
+      <div className="glass" style={{ width: '100%', maxWidth: 360, padding: 32 }}>
         <div style={{ marginBottom: 28 }}>
-          <div
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--accent-400)',
-              marginBottom: 8,
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            Producer access
-          </div>
-          <h1 style={{ fontSize: 22, color: 'var(--ink-50)', margin: 0, fontWeight: 600 }}>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Producer access</div>
+          <h1 style={{ fontSize: 22, margin: 0, color: 'var(--ink-50)', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
             Sign in to Studio
           </h1>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <label
-              htmlFor="password"
-              style={{ display: 'block', fontSize: 12, color: 'var(--ink-400)', marginBottom: 6 }}
-            >
-              Password
-            </label>
+          <div className="field">
+            <label htmlFor="password" className="field-label">Password</label>
             <input
               id="password"
               type="password"
@@ -88,17 +63,8 @@ export default function ProducerLoginPage() {
               onChange={e => setPassword(e.target.value)}
               required
               autoFocus
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                background: 'rgba(0,0,0,0.28)',
-                border: `1px solid ${error ? '#f87171' : 'var(--glass-border)'}`,
-                borderRadius: 10,
-                color: 'var(--ink-50)',
-                fontSize: 15,
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              className="input"
+              style={error ? { borderColor: '#f87171' } : undefined}
             />
           </div>
 
@@ -107,19 +73,7 @@ export default function ProducerLoginPage() {
           <button
             type="submit"
             disabled={loading || !password}
-            style={{
-              padding: '10px 20px',
-              background:
-                loading || !password ? 'rgba(255,255,255,0.07)' : 'var(--accent-500)',
-              color:
-                loading || !password ? 'var(--ink-500)' : 'var(--bg-950)',
-              border: 'none',
-              borderRadius: 10,
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: loading || !password ? 'not-allowed' : 'pointer',
-              transition: 'background 0.15s',
-            }}
+            className="btn btn-primary"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

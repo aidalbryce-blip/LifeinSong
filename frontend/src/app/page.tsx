@@ -69,17 +69,6 @@ export default function Home() {
       </div>
       <div className="grain" />
 
-      {/* Nav */}
-      <nav className="nav">
-        <div className="brand">
-          <div className="dot" />
-          Life <em>in</em> Song
-        </div>
-        <div className="nav-links">
-          <Link href="/producer" className="nav-link">Producer Studio</Link>
-        </div>
-      </nav>
-
       {/* Page content */}
       <div className="shell shell-wide" style={{ paddingTop: 60 }}>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import PaletteSwitcher from "./_components/PaletteSwitcher";
+import Nav from "./_components/Nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <PaletteSwitcher />
+        <Nav />
         {children}
       </body>
     </html>
