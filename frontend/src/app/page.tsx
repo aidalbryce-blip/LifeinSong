@@ -62,10 +62,10 @@ export default function Home() {
   return (
     <>
       {/* Page content */}
-      <div className="shell shell-wide" style={{ paddingTop: 60 }}>
+      <div className="shell shell-wide">
 
         {/* ── Hero ──────────────────────────────────────────────── */}
-        <section className="fade-up hero-grid" style={{ padding: '40px 0 80px' }}>
+        <section className="fade-up hero-grid" style={{ padding: '24px 0 64px' }}>
 
           {/* Left: headline + CTAs */}
           <div>

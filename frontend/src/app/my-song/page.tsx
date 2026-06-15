@@ -25,12 +25,48 @@ function ArrowIcon() {
   );
 }
 
+const PREP_ITEMS = [
+  ['The occasion',  'Wedding or graduation, and the event date'],
+  ["Who it’s for", 'Their name and your relationship to them'],
+  ['The vibe',      'A feeling (joyful, nostalgic, etc.) and a musical style'],
+  ['Their story',   'A few memories or a voice note about what makes them them'],
+  ['Your email',    "Where we’ll send your delivery link"],
+] as const;
+
 export default function MySongPage() {
   return (
     <div className="shell" style={{ maxWidth: 860 }}>
 
+      {/* Come prepared */}
+      <section className="fade-up" style={{ padding: '48px 0 0', maxWidth: 640 }}>
+        <div className="eyebrow" style={{ marginBottom: 16 }}>Before you begin</div>
+        <h2 className="display" style={{ fontSize: 'clamp(28px, 4vw, 42px)', margin: '0 0 14px' }}>
+          Come prepared with a few things.
+        </h2>
+        <p style={{ fontSize: 16, color: 'var(--ink-400)', lineHeight: 1.6, margin: '0 0 28px' }}>
+          The form takes about 6 minutes. Having these ready makes it even easier.
+        </p>
+        <div className="glass" style={{ padding: '4px 0', marginBottom: 60 }}>
+          {PREP_ITEMS.map(([title, desc], i) => (
+            <div
+              key={title}
+              style={{
+                display: 'flex', gap: 16, padding: '16px 24px',
+                borderBottom: i < PREP_ITEMS.length - 1 ? '1px solid var(--glass-border)' : 'none',
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-500)', flexShrink: 0, marginTop: 7 }} />
+              <div>
+                <div style={{ fontSize: 15, color: 'var(--ink-50)', fontWeight: 500, marginBottom: 2 }}>{title}</div>
+                <div style={{ fontSize: 14, color: 'var(--ink-400)' }}>{desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Hero */}
-      <section className="fade-up" style={{ padding: '48px 0 60px', maxWidth: 640 }}>
+      <section className="fade-up" style={{ padding: '0 0 60px', maxWidth: 640 }}>
         <div className="eyebrow" style={{ marginBottom: 16 }}>What happens next</div>
         <h1 className="display" style={{ fontSize: 'clamp(36px, 5vw, 60px)', margin: '0 0 18px' }}>
           Your song is on its way.

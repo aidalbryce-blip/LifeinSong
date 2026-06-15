@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 type Occasion = "wedding" | "graduation";
 type Feeling = "uplifting" | "nostalgic" | "tearjerker" | "peaceful" | "energetic";
 type Style = "acoustic" | "piano" | "folk" | "soul" | "producer";
+type Voice = "male" | "female" | "duet";
 type RecordState = "idle" | "requesting" | "recording" | "recorded" | "error";
 
 interface IntakeData {
@@ -18,6 +19,7 @@ interface IntakeData {
   feelingNote: string;
   style: Style | null;
   styleNote: string;
+  voice: Voice | null;
   voiceBlob: Blob | null;
   voiceDuration: number;
   storyText: string;
@@ -32,12 +34,18 @@ const FEELINGS: { id: Feeling; label: string; hint: string }[] = [
   { id: "energetic",  label: "Fun & Energetic",         hint: "Pulls everyone onto the floor" },
 ];
 
-const STYLES: { id: Style; label: string }[] = [
-  { id: "acoustic",  label: "Acoustic Singer-Songwriter" },
-  { id: "piano",     label: "Piano Ballad" },
-  { id: "folk",      label: "Folk / Country" },
-  { id: "soul",      label: "Classic Soul" },
-  { id: "producer",  label: "Leave it to the producer" },
+const STYLES: { id: Style; label: string; hint: string }[] = [
+  { id: "acoustic",  label: "Acoustic Singer-Songwriter", hint: "Guitar-forward, intimate" },
+  { id: "piano",     label: "Piano Ballad",               hint: "Cinematic, emotional" },
+  { id: "folk",      label: "Folk / Country",             hint: "Warm, storytelling" },
+  { id: "soul",      label: "Classic Soul",               hint: "Rich, textured" },
+  { id: "producer",  label: "Leave it to the producer",   hint: "We'll match the right sound to your story" },
+];
+
+const VOICES: { id: Voice; label: string; hint: string }[] = [
+  { id: "male",   label: "Male",   hint: "One strong lead vocal" },
+  { id: "female", label: "Female", hint: "Warm and intimate" },
+  { id: "duet",   label: "Duet",   hint: "Two voices, one song" },
 ];
 
 const STEP_NAMES = ["Occasion", "Vibe", "Story", "Review", "Submit"];
@@ -96,6 +104,7 @@ interface OrderBrief {
   feelingNote: string;
   style: Style | null;
   styleNote: string;
+  voice: Voice | null;
   voiceRecording: { blob: Blob; durationSeconds: number } | null;
   storyText: string | null;
   email: string;
@@ -112,6 +121,7 @@ function buildBrief(data: IntakeData): OrderBrief {
     feelingNote: data.feelingNote.trim(),
     style: data.style,
     styleNote: data.styleNote.trim(),
+    voice: data.voice,
     voiceRecording: data.voiceBlob ? { blob: data.voiceBlob, durationSeconds: data.voiceDuration } : null,
     storyText: data.storyText.trim() || null,
     email: data.email.trim(),
@@ -134,6 +144,7 @@ async function submitOrder(brief: OrderBrief): Promise<{ order_id: string; statu
       feelingNote: brief.feelingNote,
       style: brief.style,
       styleNote: brief.styleNote,
+      voice: brief.voice,
       storyText: brief.storyText,
       email: brief.email,
       submittedAt: brief.submittedAt,
@@ -149,6 +160,24 @@ async function submitOrder(brief: OrderBrief): Promise<{ order_id: string; statu
     throw new Error(`Submission failed (${res.status})${text ? `: ${text}` : ""}`);
   }
   return res.json() as Promise<{ order_id: string; status: string }>;
+}
+
+// ─── Enter key hook ───────────────────────────────────────────────────────────
+
+function useEnterKey(onNext: () => void, enabled: boolean) {
+  const cb = useRef(onNext);
+  useEffect(() => { cb.current = onNext; }, [onNext]);
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (!enabled) return;
+      if (e.key !== "Enter") return;
+      if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+      e.preventDefault();
+      cb.current();
+    }
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [enabled]);
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -230,6 +259,7 @@ function Step1({ data, set, onNext, onBack }: {
   onBack: () => void;
 }) {
   const ok = !!data.occasion && !!data.date && !!data.name.trim() && !!data.relationship.trim();
+  useEnterKey(onNext, ok);
 
   return (
     <div className="fade-up shell" style={{ maxWidth: 560 }}>
@@ -306,14 +336,15 @@ function Step2({ data, set, onNext, onBack }: {
   onNext: () => void;
   onBack: () => void;
 }) {
-  const ok = !!data.feeling && !!data.style;
+  const ok = !!data.feeling && !!data.style && !!data.voice;
+  useEnterKey(onNext, ok);
 
   return (
     <div className="fade-up shell" style={{ maxWidth: 560 }}>
       <StepHeader
         eyebrow="Step 2 of 5"
         title="What should it feel like?"
-        sub="Pick the feeling and the sound. There are no wrong answers."
+        sub="Pick the feeling, the sound, and the voice. There are no wrong answers."
       />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
@@ -346,14 +377,16 @@ function Step2({ data, set, onNext, onBack }: {
         {/* Style */}
         <div>
           <label className="field-label">Musical style</label>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {STYLES.map((s) => (
               <button
                 key={s.id}
                 onClick={() => set({ style: s.id })}
                 className={`chip${data.style === s.id ? " active" : ""}`}
+                style={{ borderRadius: "var(--radius-sm)", flexDirection: "column", gap: 3, width: "100%", textAlign: "left" }}
               >
-                {s.label}
+                <span style={{ fontWeight: 500, fontSize: 15 }}>{s.label}</span>
+                <span style={{ fontSize: 12, opacity: 0.65 }}>{s.hint}</span>
               </button>
             ))}
           </div>
@@ -365,6 +398,24 @@ function Step2({ data, set, onNext, onBack }: {
             className="textarea"
             style={{ marginTop: 12 }}
           />
+        </div>
+
+        {/* Voice */}
+        <div>
+          <label className="field-label">Voice</label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {VOICES.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => set({ voice: v.id })}
+                className={`chip${data.voice === v.id ? " active" : ""}`}
+                style={{ borderRadius: "var(--radius-sm)", flexDirection: "column", gap: 3, width: "100%", textAlign: "left" }}
+              >
+                <span style={{ fontWeight: 500, fontSize: 15 }}>{v.label}</span>
+                <span style={{ fontSize: 12, opacity: 0.65 }}>{v.hint}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -393,6 +444,7 @@ function Step3({ data, set, onNext, onBack }: {
   const durationRef = useRef(data.voiceDuration);
 
   const ok = !!data.voiceBlob || !!data.storyText.trim();
+  useEnterKey(onNext, ok);
 
   const clearTimer = () => {
     if (timerRef.current !== null) {
@@ -641,11 +693,14 @@ function Step4({ data, onEdit, onNext, onBack }: {
   onNext: () => void;
   onBack: () => void;
 }) {
+  useEnterKey(onNext, true);
+
   const occasionLabel = data.occasion
     ? `${data.occasion === "wedding" ? "💍" : "🎓"} ${data.occasion.charAt(0).toUpperCase() + data.occasion.slice(1)}`
     : "—";
   const feeling = FEELINGS.find((f) => f.id === data.feeling);
   const style = STYLES.find((s) => s.id === data.style);
+  const voice = VOICES.find((v) => v.id === data.voice);
   const storyText = data.storyText.trim();
 
   return (
@@ -667,6 +722,7 @@ function Step4({ data, onEdit, onNext, onBack }: {
         <ReviewSection title="The vibe" onEdit={() => onEdit(1)}>
           <SummaryRow label="Feeling" value={feeling?.label ?? "—"} />
           <SummaryRow label="Musical style" value={style?.label ?? "—"} />
+          <SummaryRow label="Voice" value={voice?.label ?? "—"} />
           {data.feelingNote.trim() && <SummaryBlock label="Feeling notes" value={data.feelingNote.trim()} />}
           {data.styleNote.trim() && <SummaryBlock label="Style notes" value={data.styleNote.trim()} />}
         </ReviewSection>
@@ -709,6 +765,8 @@ function Step5({ data, set, onBack, onSubmitted }: {
       setSubmitting(false);
     }
   };
+
+  useEnterKey(handleSubmit, emailOk && !submitting);
 
   return (
     <div className="fade-up shell" style={{ maxWidth: 560 }}>
@@ -791,6 +849,7 @@ const INITIAL_DATA: IntakeData = {
   feelingNote: "",
   style: null,
   styleNote: "",
+  voice: null,
   voiceBlob: null,
   voiceDuration: 0,
   storyText: "",
