@@ -4,8 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const BACKEND = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
-
 type Tab = 'brief' | 'deliver';
 type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 
@@ -145,7 +143,7 @@ export default function OrderWorkPage() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${BACKEND}/api/producer/orders/${orderId}`, { credentials: 'include' })
+    fetch(`/api/producer/orders/${orderId}`)
       .then(async res => {
         if (res.status === 401) { handleUnauth(); return; }
         if (res.status === 404) { if (!cancelled) setNotFound(true); return; }
@@ -168,9 +166,8 @@ export default function OrderWorkPage() {
   async function patchOrder(fields: Record<string, string | boolean>) {
     setSaving(true);
     try {
-      const res = await fetch(`${BACKEND}/api/producer/orders/${orderId}`, {
+      const res = await fetch(`/api/producer/orders/${orderId}`, {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fields),
       });
@@ -195,9 +192,8 @@ export default function OrderWorkPage() {
     const form = new FormData();
     form.append('file', file);
     try {
-      const res = await fetch(`${BACKEND}/api/producer/orders/${orderId}/song`, {
+      const res = await fetch(`/api/producer/orders/${orderId}/song`, {
         method: 'POST',
-        credentials: 'include',
         body: form,
       });
       if (res.status === 401) { handleUnauth(); return; }
@@ -218,9 +214,8 @@ export default function OrderWorkPage() {
   async function handleStatusChange(newStatus: string) {
     setSendingReview(true);
     try {
-      const res = await fetch(`${BACKEND}/api/producer/orders/${orderId}`, {
+      const res = await fetch(`/api/producer/orders/${orderId}`, {
         method: 'PATCH',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -370,7 +365,7 @@ export default function OrderWorkPage() {
               </div>
               <audio
                 controls
-                src={`${BACKEND}/api/producer/orders/${orderId}/voice`}
+                src={`/api/producer/orders/${orderId}/voice`}
                 style={{ width: '100%', borderRadius: 'var(--radius-sm)' }}
               />
               <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 6 }}>
